@@ -2,15 +2,21 @@ import pygame
 from pygame.locals import *
 import math
 
+
 SPEED = 1
 TIME = 1
 MARGIN = 3
 WINH, WINW = 700 +2*MARGIN, 1300 + 2*MARGIN
 BTLFLDH, BTLFLDW = 700, 900
+SHIRAD = 20
+CANNW, CANNH = 12,24
 
 BLACK = (0,0,0,0)
 GRAY = (150,150,150,0)
 DEEPBLUE = (0,4,130,0)
+
+objectsToDraw = []
+
 class spaceObject:
     """Clase principal de objeto.
     Atributos:
@@ -57,20 +63,66 @@ class spaceObject:
         self.v_x = self.v_x +SPEED
     def velLeft(self):
         self.v_x = self.v_x -SPEED
-    dictAccs = {pygame.K_UP: velUp, pygame.K_DOWN: velDown, pygame.K_RIGHT: velRight, pygame.K_LEFT: velLeft}
+    dictAccs = {pygame.K_w: velUp, pygame.K_s: velDown, pygame.K_d: velRight, pygame.K_a: velLeft}
 
+class bullet(spaceObject):
+    '''Clase para un projectil. '''
+    vel = 0
+    objtv= (0,0)
+    def __init__(self, newPos = None, newVel = None, newObjtv =None):
+        if newVel==None:
+          pass
+        else:
+            self.vel = newVel
+        if newObjtv==None:
+          pass
+        else:
+            self.objtv = newObjtv
+            
+        spaceObject.__init__(self,newPos)
+        
+        objtvx, objtvy =newObjtv[0], newObjtv[1]
+        px, py = self.pos[0], self.pos[1]
+        dis = math.sqrt((objtvx - px)**2+(objtvy - py)**2)
+        cosA, sinA = (objtvx - px)/dis, (objtvy - py)/dis
+        
+        self.setV(self.vel*cosA,self.vel*sinA)
+        
+    def draw(self, surf, backSurf):
+        pygame.draw.circle(surf, (255,255,255), self.pos, 3)
+        backSurf.blit(surf, (MARGIN, MARGIN))
+        pygame.display.flip()
+        
 class ship(spaceObject):
     '''Clase nave. Hereda de spaceObject
      '''
     color = (0,0,0,0)
-    def __init__(self, newPos =None, newColor = None):
+    cannRect = ((0,0), (0,0))
+    def __init__(self, newPos = None, newColor = None):
         if newColor == None:
             pass
         else:
             self.color = newColor
+        
         spaceObject.__init__(self,newPos)
+        
+        
 
+
+    def update(self):
+        mpx, mpy = pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1]#Not clean
+        posx, posy = self.pos[0], self.pos[1]
+        dis = math.sqrt((mpx - posx)**2 + (mpy - posy)**2)
+        sinA = (mpy -posy)/dis
+        cosA = (mpx - posx)/dis
+        return (int(posx +SHIRAD*cosA),int( posy + SHIRAD*sinA))
+    
     def draw(self, surf, backSurf):
-        pygame.draw.circle(surf, self.color, (self.pos), 20)
+        pygame.draw.circle(surf, self.color, self.pos, SHIRAD)
+        pygame.draw.circle(surf, (255,255,255,0), self.update(), int(SHIRAD/4))
         backSurf.blit(surf, (MARGIN, MARGIN))
         pygame.display.flip()
+        
+    def shot(self):
+        objectsToDraw.append(bullet(newPos = self.update(), newVel = 5 , newObjtv = pygame.mouse.get_pos()))
+        

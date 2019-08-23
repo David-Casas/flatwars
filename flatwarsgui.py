@@ -13,6 +13,8 @@ BLACK = (0,0,0,0)
 GRAY = (150,150,150,0)
 DEEPBLUE = (0,4,130,0)
 
+
+
 def clearSurf(surf):
     #dibujar las líneas
     surf.fill(BLACK)
@@ -37,7 +39,7 @@ btlfldSurf.fill(BLACK)
 
 
 myShip = fcls.ship(newPos = (350,450), newColor =(255,0,0,0))
-myShip.draw(btlfldSurf, mainWindow)
+fcls.objectsToDraw.append(myShip)
 mainWindow.blit(btlfldSurf, (MARGIN, MARGIN))
 pygame.display.flip()
 
@@ -50,9 +52,12 @@ def main():
     frame = 0
     while keep:
         clearSurf(btlfldSurf)
-        #print('v_x = %f, v_y = %f, pos = (%d, %d), time = (%f,%f)'%(myShip.getVX(), myShip.getVY(), myShip.getPos()[0],myShip.getPos()[1], myShip.getTimeX(), myShip.getTimeY()))
-        myShip.calcPos()#Calcula la posición.
-        myShip.draw(btlfldSurf, mainWindow)#Dibuja la nave.        
+        for thing in fcls.objectsToDraw:
+            if not(0<=thing.getPos()[0]<= BTLFLDW)or not(0<=thing.getPos()[1]<= BTLFLDH):
+                fcls.objectsToDraw.remove(thing)
+                continue 
+            thing.calcPos()
+            thing.draw(btlfldSurf, mainWindow)
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -60,18 +65,20 @@ def main():
                 break
             if event.type == pygame.KEYDOWN:
                 if event.key in list(myShip.dictAccs.keys()):
-                    if event.key == pygame.K_UP:
+                    if event.key == pygame.K_w:
                         #print('Arriba')
                         myShip.velUp()
-                    elif event.key == pygame.K_DOWN:
+                    elif event.key == pygame.K_s:
                         #print('Abajo')
                         myShip.velDown()
-                    elif event.key == pygame.K_RIGHT:
+                    elif event.key == pygame.K_d:
                         #print('Derecha')
                         myShip.velRight()
-                    elif event.key == pygame.K_LEFT:
+                    elif event.key == pygame.K_a:
                         #print('Izquierda')
                         myShip.velLeft()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                myShip.shot()
         clock.tick(60)
         frame = frame +1
     pygame.quit()
