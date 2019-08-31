@@ -145,11 +145,23 @@ class bullet(spaceObject):
         objtvx, objtvy =newObjtv[0], newObjtv[1]
         px, py = self.pos[0], self.pos[1]
         dis = math.sqrt((objtvx - px)**2+(objtvy - py)**2)
-        cosA, sinA = (objtvx - px)/dis, (objtvy - py)/dis
+        if dis== 0:
+            self.setV(0,0)
+        else:
+            cosA, sinA = (objtvx - px)/dis, (objtvy - py)/dis
         
-        self.setV(self.vel*cosA,self.vel*sinA)
+            self.setV(self.vel*cosA,self.vel*sinA)
+    
+    def collided(self):
+        #Va a ver si ha chocado con algo
+        toCheck = [x.getRect() for x in inGame if not(x == self)]
+        colided = self.getRect().collidelist(toCheck)
+        if colided != -1 and not self.getShooted():
+            self.switchShooted()
+            inGame.remove(self)
         
     def draw(self, surf):
+        self.collided()
         self.calcPos()
         self.setRect(pygame.draw.circle(surf, (255,255,255), self.getPos(), BULLETRAD))
         self.isOut()
@@ -237,6 +249,8 @@ class ship(spaceObject, pygame.sprite.Sprite):
         return self.getRect()
         
     def shot(self, objective):
+        if self.getShooted():
+            return
         inGame.append(bullet(newPos = self.update(objective), newVel = 10 , newObjtv = objective))
     def misil(self, objective):
         if self.hasMisil:
@@ -262,7 +276,9 @@ class nship(ship):
         ship.__init__(self, newPos, newColor)
         self.origin = newPos #Guardar donde nació.
         self.Behav = newBehav
+        self.objtv = (-1,-1)
         self.setVY(0)
+        self.setVX(0)
         
     def guardian(self):
         #Si está quieto lo mueve a algún lado.
@@ -278,11 +294,34 @@ class nship(ship):
                 (type(thing) is misil or 
                 ((type(thing) is ship or type(thing) is nship) and thing.color != self.color)) ):
                 self.shot(thing.getPos())
-    #Este tipo de nave 
-    #def killer(self):
+    
+    def killer(self):
+        #Revisar todas las cosas que están a unos __ pixeles a la redonda y si son misiles o naves enemigas.
+        for thing in inGame:
+            if (math.sqrt((thing.getX() - self.getX())**2 + (thing.getY() - self.getY())**2 ) <=100 and
+                ((type(thing) is ship or type(thing) is nship) and thing.color != self.color)):
+                self.shot(thing.getPos())#Les dispara
+            elif (math.sqrt((thing.getX() - self.getX())**2 + (thing.getY() - self.getY())**2 ) <=100 and
+                type(thing) is base and thing.color != self.color):
+                    self.misil(thing.getPos())
+        if ((math.fabs(self.origin[0] - self.getX())>= 50) or (math.fabs(self.origin[1] - self.getY()) >= 50) or
+            self.getV() == (0,0)):#Si está lejos __ píxeles de donde partió
+            #Primero decidir si irá horizontal o verticalmente. 1 vertical, 0 horizontal
+            direction = random.choice([1,0])
+            if direction : #Si es 1, vertical
+                self.setVY(random.choice([-1,1]))
+            else:
+                self.setVX(random.choice([-1,1]))
+            self.origin = self.getPos()#Ahora el origen es donde está.
+        elif(self.getX() <= 2*SHIRAD or self.getX() >= BTLFLDW - 2*SHIRAD):
+            self.setVX(-1*self.getVX())
+        elif(self.getY()<= 2*SHIRAD or self.getY()>= BTLFLDH - 2*SHIRAD):
+            self.setVY(-1*self.getVY())
+        else:
+            return
         
-            
-    dictBehav ={1: guardian }
+        
+    dictBehav ={1: guardian, 2:killer }
     def draw(self, backSurf):
         self.collided()
         self.dictBehav[self.Behav](self)

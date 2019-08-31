@@ -52,12 +52,15 @@ enemyBase = fcls.base(ENEMYCOLOR, (ENEMYBASEX, ENEMYBASEY), isEnemy = True)
 myShip = fcls.ship(newPos = (100,350), newColor =(0,0,255))
 ally1 = fcls.nship(newPos = (ALLYBASEX + 100, ALLYBASEY - 100), newColor = ALLYCOLOR)
 ally2 = fcls.nship(newPos = (ALLYBASEX +150, ALLYBASEY + 100), newColor = ALLYCOLOR)
+ally3 = fcls.nship(newPos= (250, 450), newColor = ALLYCOLOR, newBehav = 2)
+ally4 = fcls.nship(newPos= (250, 150), newColor = ALLYCOLOR, newBehav = 2)
 enemy1=fcls.nship(newPos = (ENEMYBASEX -100, ENEMYBASEY - 100), newColor = ENEMYCOLOR)
 enemy2=fcls.nship(newPos = (ENEMYBASEX -50, ENEMYBASEY + 100), newColor =ENEMYCOLOR)
+enemy3 = fcls.nship(newPos= (750, 100), newColor = ENEMYCOLOR, newBehav = 2)
+enemy4 = fcls.nship(newPos= (750, 450), newColor = ENEMYCOLOR, newBehav = 2)
 #Blit todo antes de empezar.
 mainWindow.blit(btlfldSurf, (MARGIN, MARGIN))
 pygame.display.flip()
-
 #Dibujar Superficie.
 clock = pygame.time.Clock()
 def main():
