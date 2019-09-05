@@ -5,18 +5,63 @@ import flatclasses as fcls
 import random    
 
 #TODO: Hacer que cambie de escenario si se sale hacia la derecha.
+#TODO: Mejorar puntería
+#TODO: Condiciones de victoria y perdida.
+#TODO: Carteles que indiquen la velocidad.
+#TODO: Que las naves se eviten.
+#TODO: Que un misil destruya naves a la redonda.
+
 MARGIN = 3
 WINH, WINW = 700 +2*MARGIN, 1300 + 2*MARGIN
 BTLFLDH, BTLFLDW = 700, 900
 BASEW, BASEH = 50, 100
 
-ALLYBASEX, ALLYBASEY =0,250
+ALLIES = 30
+ENEMIES = 30
+
+ALLYBASEX, ALLYBASEY =0,300
 ENEMYBASEX, ENEMYBASEY = BTLFLDW-50, 250
 ENEMYCOLOR = (255,255,0)
 ALLYCOLOR = (0,0,255)
+SELFCOLOR = (100,100,255)
 BLACK = (0,0,0,0)
 GRAY = (150,150,150,0)
 DEEPBLUE = (0,4,130,0)
+SHIRAD = 20
+#Init
+pygame.init()
+pygame.font.init()
+
+#Crea la ventana base.
+mainWindow = pygame.display.set_mode((WINW, WINH))
+pygame.display.set_caption('FlatWars')
+mainWindow.fill(DEEPBLUE)
+
+#Superficies
+#Campo de Batalla
+btlfldSurf = pygame.Surface((BTLFLDW, BTLFLDH)).convert()
+#Bases
+allyBase = fcls.base(ALLYCOLOR, (ALLYBASEX, ALLYBASEY), team = 1)
+enemyBase = fcls.base(ENEMYCOLOR, (ENEMYBASEX, ENEMYBASEY), isEnemy = True, team = 2)
+#Crea las naves
+myShip = fcls.ship(newPos = (150,350), newColor =SELFCOLOR, team = 1)
+Team1 =[myShip,
+fcls.nship(newPos = (ALLYBASEX + 100, ALLYBASEY- 200), newColor = ALLYCOLOR, team = 1),
+fcls.nship(newPos = (ALLYBASEX + 100, ALLYBASEY + 200), newColor = ALLYCOLOR, team = 1),
+fcls.nship(newPos= (ALLYBASEX + 200, ALLYBASEY  - 200), newColor = ALLYCOLOR, newBehav = 2, team = 1),
+fcls.nship(newPos= (ALLYBASEX + 200, ALLYBASEY + 300), newColor = ALLYCOLOR, newBehav = 2, team = 1)]
+
+Team2 =[fcls.nship(newPos = (ENEMYBASEX -100, ENEMYBASEY - 200), newColor = ENEMYCOLOR, team = 2),
+fcls.nship(newPos = (ENEMYBASEX -100, ENEMYBASEY + 400), newColor =ENEMYCOLOR, team = 2),
+fcls.nship(newPos= (ENEMYBASEX -150 , ENEMYBASEY + 50), newColor = ENEMYCOLOR, newBehav = 2, team = 2),
+fcls.nship(newPos= (ENEMYBASEX -200, ENEMYBASEY -200), newColor = ENEMYCOLOR, newBehav = 2, team = 2),
+fcls.nship(newPos = (ENEMYBASEX -200, ENEMYBASEY +300), newColor = ENEMYCOLOR, newBehav = 2, team = 2)]
+
+#Blit todo antes de empezar.
+mainWindow.blit(btlfldSurf, (MARGIN, MARGIN))
+pygame.display.flip()
+#Dibujar Superficie.
+clock = pygame.time.Clock()
 
 
 
@@ -33,37 +78,9 @@ def clearSurf(surf, backSurf):
     pygame.display.flip()
     
     
-#Init
-pygame.init()
-pygame.font.init()
 
-#Crea la ventana base.
-mainWindow = pygame.display.set_mode((WINW, WINH))
-pygame.display.set_caption('FlatWars')
-mainWindow.fill(DEEPBLUE)
-
-#Superficies
-#Campo de Batalla
-btlfldSurf = pygame.Surface((BTLFLDW, BTLFLDH)).convert()
-#Bases
-allyBase = fcls.base(ALLYCOLOR, (ALLYBASEX, ALLYBASEY))
-enemyBase = fcls.base(ENEMYCOLOR, (ENEMYBASEX, ENEMYBASEY), isEnemy = True)
-#Crea las naves
-myShip = fcls.ship(newPos = (100,350), newColor =(0,0,255))
-ally1 = fcls.nship(newPos = (ALLYBASEX + 100, ALLYBASEY - 100), newColor = ALLYCOLOR)
-ally2 = fcls.nship(newPos = (ALLYBASEX +150, ALLYBASEY + 100), newColor = ALLYCOLOR)
-ally3 = fcls.nship(newPos= (250, 450), newColor = ALLYCOLOR, newBehav = 2)
-ally4 = fcls.nship(newPos= (250, 150), newColor = ALLYCOLOR, newBehav = 2)
-enemy1=fcls.nship(newPos = (ENEMYBASEX -100, ENEMYBASEY - 100), newColor = ENEMYCOLOR)
-enemy2=fcls.nship(newPos = (ENEMYBASEX -50, ENEMYBASEY + 100), newColor =ENEMYCOLOR)
-enemy3 = fcls.nship(newPos= (750, 100), newColor = ENEMYCOLOR, newBehav = 2)
-enemy4 = fcls.nship(newPos= (750, 450), newColor = ENEMYCOLOR, newBehav = 2)
-#Blit todo antes de empezar.
-mainWindow.blit(btlfldSurf, (MARGIN, MARGIN))
-pygame.display.flip()
-#Dibujar Superficie.
-clock = pygame.time.Clock()
 def main():
+    global myShip, ENEMIES, ALLIES
     #Mainloop.
     keep = True
     frame = 0
@@ -94,6 +111,22 @@ def main():
                     myShip.misil(pygame.mouse.get_pos())
             if event.type == pygame.MOUSEBUTTONDOWN:
                 myShip.shot(pygame.mouse.get_pos())
+        #Quitar las naves que no están el el juego
+        for team in [Team1, Team2]:
+            for ship in team:
+                if not(ship in fcls.inGame):
+                    team.remove(ship)
+        #Rellenar los equipos dada una perdida.
+        #Ver si el prota murió
+        if not(myShip in Team1):
+            myShip = fcls.ship(newPos = (150,350), newColor = SELFCOLOR, team = 1)
+            Team1.append(myShip)
+        if len(Team1) < 5 and ALLIES > 0:
+            ALLIES -= 1
+            Team1.append(fcls.nship(newPos = (random.randrange(ALLYBASEX +100 ,ALLYBASEX + 150, 2*SHIRAD),random.randrange(0,BTLFLDH, 2*SHIRAD) ), newColor = ALLYCOLOR, newBehav = random.choice([1,2]), team = 1))
+        if len(Team2) <5 and ENEMIES  > 0:
+            ENEMIES -= 1
+            Team2.append(fcls.nship(newPos = (random.randrange(ENEMYBASEX - 150, ENEMYBASEX - 100, 2*SHIRAD), random.randrange(0, BTLFLDH, 2*SHIRAD)), newColor = ENEMYCOLOR, newBehav = random.choice([1,2]), team = 2))
         clock.tick(60)
         frame = frame +1
     pygame.quit()

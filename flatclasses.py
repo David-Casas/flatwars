@@ -121,7 +121,8 @@ class spaceObject:
         
     def isOut(self):
         if not(0 <= self.posX <= BTLFLDW) or not(0<= self.posY <= BTLFLDH):
-            inGame.remove(self)
+            if (self in inGame):
+                inGame.remove(self)
     dictAccs = {pygame.K_w: velUp, pygame.K_s: velDown, pygame.K_d: velRight, pygame.K_a: velLeft}
 
 class bullet(spaceObject):
@@ -201,7 +202,7 @@ class misil( bullet, pygame.sprite.Sprite):
 class ship(spaceObject, pygame.sprite.Sprite):
     '''Clase nave. Hereda de spaceObject
      '''
-    def __init__(self, newPos = None, newColor = None):
+    def __init__(self, newPos = None, newColor = None, team = 1):
         super().__init__()
         self.hasMisil = True
         self.pos = newPos
@@ -210,6 +211,7 @@ class ship(spaceObject, pygame.sprite.Sprite):
         self.setRect((self.getX(), self.getY(), SHIPW, SHIPH))
         self.image = pygame.image.load(SHIP_SOURCE).convert_alpha()
         self.pixArr =  pygame.surfarray.pixels3d(self.image)
+        self.team = team
         #Cambiar para el color
         for xcor in range(len(self.pixArr[1])):#Recorre las filas.
             for ycor in range(len(self.pixArr[2])):#Columnas
@@ -272,8 +274,8 @@ class ship(spaceObject, pygame.sprite.Sprite):
 class nship(ship):
     """Clase para nave enemiga. """
     
-    def __init__(self, newPos = None, newColor = None, newBehav =1):
-        ship.__init__(self, newPos, newColor)
+    def __init__(self, newPos = None, newColor = None, newBehav =1, team = 1):
+        ship.__init__(self, newPos, newColor, team)
         self.origin = newPos #Guardar donde nació.
         self.Behav = newBehav
         self.objtv = (-1,-1)
@@ -292,17 +294,17 @@ class nship(ship):
         for thing in inGame:
             if (math.sqrt((thing.getX() - self.getX())**2 + (thing.getY() - self.getY())**2 ) <=100 and
                 (type(thing) is misil or 
-                ((type(thing) is ship or type(thing) is nship) and thing.color != self.color)) ):
+                ((type(thing) is ship or type(thing) is nship) and thing.team != self.team)) ):
                 self.shot(thing.getPos())
     
     def killer(self):
         #Revisar todas las cosas que están a unos __ pixeles a la redonda y si son misiles o naves enemigas.
         for thing in inGame:
             if (math.sqrt((thing.getX() - self.getX())**2 + (thing.getY() - self.getY())**2 ) <=100 and
-                ((type(thing) is ship or type(thing) is nship) and thing.color != self.color)):
+                ((type(thing) is ship or type(thing) is nship) and thing.team != self.team)):
                 self.shot(thing.getPos())#Les dispara
             elif (math.sqrt((thing.getX() - self.getX())**2 + (thing.getY() - self.getY())**2 ) <=100 and
-                type(thing) is base and thing.color != self.color):
+                type(thing) is base and thing.team != self.team):
                     self.misil(thing.getPos())
         if ((math.fabs(self.origin[0] - self.getX())>= 50) or (math.fabs(self.origin[1] - self.getY()) >= 50) or
             self.getV() == (0,0)):#Si está lejos __ píxeles de donde partió
@@ -336,7 +338,7 @@ class nship(ship):
 class base(pygame.sprite.Sprite, spaceObject):
     """Clase para la base de las naves"""
     
-    def __init__(self, color, coordenadas, isEnemy = False):
+    def __init__(self, color, coordenadas, isEnemy = False, team = 1):
         super().__init__()
         spaceObject.__init__(self,coordenadas)
         self.image = pygame.Surface((BASEW, BASEH)).convert()
@@ -344,6 +346,7 @@ class base(pygame.sprite.Sprite, spaceObject):
         self.image.fill(self.color)
         inGame.append(self)
         self.isEnemy = isEnemy
+        self.team = team
         
 
     def getRect(self):
